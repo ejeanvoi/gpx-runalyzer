@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from src.analysis.splits import SPLIT_LABELS, compute_best_splits
+from src.analysis.splits import PR_DISTANCES, SPLIT_LABELS, compute_best_splits
 from src.models.activity import Activity
 from src.services.store import ActivityStore
 from src.ui.formatting import (
@@ -34,9 +34,6 @@ from src.ui.widgets.filters import FiltersWidget
 
 class _PRClickLabel(QLabel):
     clicked = pyqtSignal(object)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def mousePressEvent(self, event: QMouseEvent | None):
         if event is not None and event.button() == Qt.MouseButton.LeftButton:
@@ -90,18 +87,23 @@ class DashboardView(QWidget):
         summary_lay.addStretch()
         layout.addWidget(self._summary_frame)
 
-        # Personal records (compact single line)
+        # Personal records (card, same style as summary frame)
+        pr_frame = QFrame()
+        pr_frame.setStyleSheet(
+            f"QFrame {{ background-color: {CARD_BG}; border: 1px solid {BORDER}; "
+            f"border-radius: {RADIUS_MD}; padding: 0 12px; }}"
+        )
+        pr_lay = QHBoxLayout(pr_frame)
+        pr_lay.setContentsMargins(8, 6, 8, 6)
+        pr_lay.setSpacing(16)
         pr_title = QLabel("🏁 PR")
         pr_title.setStyleSheet(
-            f"color: {ACCENT}; font-size: {FONT_SIZE_BASE}; font-weight: 700; padding-left: 4px;"
+            f"color: {ACCENT}; font-size: {FONT_SIZE_BASE}; font-weight: 700; padding: 0;"
         )
-        pr_lay = QHBoxLayout()
-        pr_lay.setContentsMargins(0, 0, 0, 0)
-        pr_lay.setSpacing(12)
         pr_lay.addWidget(pr_title)
         self._pr_labels: list[_PRClickLabel] = []
         self._pr_activities: dict[int, Activity | None] = {}
-        for idx, dist_km in enumerate((1000, 5000, 10000, 21097.5, 42195)):
+        for idx, dist_km in enumerate(PR_DISTANCES):
             lbl = _PRClickLabel("--:--")
             lbl.setStyleSheet(
                 f"color: {TEXT_SUBTLE}; font-size: {FONT_SIZE_SM}; padding: 0;"
@@ -110,11 +112,7 @@ class DashboardView(QWidget):
             pr_lay.addWidget(lbl)
             self._pr_labels.append(lbl)
         pr_lay.addStretch()
-        vlay = QVBoxLayout()
-        vlay.setContentsMargins(0, 0, 0, 0)
-        vlay.setSpacing(2)
-        vlay.addLayout(pr_lay)
-        layout.addLayout(vlay)
+        layout.addWidget(pr_frame)
 
         # Activity list (bottom, stretch)
         self._list_model = ActivityListModel()
@@ -177,39 +175,31 @@ class DashboardView(QWidget):
         avg_pace = sum(all_paces) / len(all_paces) if all_paces else 0
         avg_hr = sum(all_hrs) / len(all_hrs) if all_hrs else 0
 
-        self._summary_labels[0].setText(f"Activities: {count}")
-        self._summary_labels[0].setStyleSheet(
-            f"QLabel {{ color: {ACCENT}; font-size: {FONT_SIZE_BASE}; font-weight: 600; padding: 0; }}"
-        )
-        self._summary_labels[1].setText(f"Distance: {format_distance_km(total_dist)}")
-        self._summary_labels[1].setStyleSheet(
-            f"QLabel {{ color: {ACCENT}; font-size: {FONT_SIZE_BASE}; font-weight: 600; padding: 0; }}"
-        )
-        self._summary_labels[2].setText(f"Elev. Gain: {format_elevation(total_el_gain)}")
-        self._summary_labels[2].setStyleSheet(
-            f"QLabel {{ color: {ACCENT}; font-size: {FONT_SIZE_BASE}; font-weight: 600; padding: 0; }}"
-        )
-        self._summary_labels[3].setText(f"Avg Pace: {format_pace(avg_pace)}")
-        self._summary_labels[3].setStyleSheet(
-            f"QLabel {{ color: {ACCENT}; font-size: {FONT_SIZE_BASE}; font-weight: 600; padding: 0; }}"
-        )
         hr_str = f"{avg_hr:.0f}" if avg_hr else "--"
-        self._summary_labels[4].setText(f"Avg HR: {hr_str}")
-        self._summary_labels[4].setStyleSheet(
+        texts = [
+            f"Activities: {count}",
+            f"Distance: {format_distance_km(total_dist)}",
+            f"Elev. Gain: {format_elevation(total_el_gain)}",
+            f"Avg Pace: {format_pace(avg_pace)}",
+            f"Avg HR: {hr_str}",
+        ]
+        active_style = (
             f"QLabel {{ color: {ACCENT}; font-size: {FONT_SIZE_BASE}; font-weight: 600; padding: 0; }}"
         )
+        for lbl, text in zip(self._summary_labels, texts):
+            lbl.setText(text)
+            lbl.setStyleSheet(active_style)
 
     def _update_pr(self, activities: list[Activity]):
-        pr_distances: list[float] = [1000, 5000, 10000, 21097.5, 42195]
         best: dict[float, float] = {}
         best_activity: dict[float, Activity] = {}
         for act in activities:
-            splits = compute_best_splits(act.points, pr_distances)
+            splits = compute_best_splits(act.points, PR_DISTANCES)
             for d, t in splits.items():
                 if t is not None and (d not in best or t < best[d]):
                     best[d] = t
                     best_activity[d] = act
-        for i, dist in enumerate(pr_distances):
+        for i, dist in enumerate(PR_DISTANCES):
             label = SPLIT_LABELS.get(dist, f"{dist}m")
             if dist in best:
                 self._pr_labels[i].setText(f"{label}: {format_time_total(best[dist])}")

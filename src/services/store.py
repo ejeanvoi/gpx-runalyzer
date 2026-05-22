@@ -39,27 +39,20 @@ class ActivityStore:
         from src.services.config import AppSettings
         if not isinstance(settings, AppSettings):
             return
-        if settings.activity_types:
-            type_set = set(settings.activity_types)
-            self._activities = [
-                a for a in self._activities if a.activity_type in type_set
-            ]
+        start = None
+        end = None
         if settings.start_date:
             try:
-                sd = datetime.strptime(settings.start_date, "%Y-%m-%d")
-                self._activities = [
-                    a for a in self._activities if a.date.replace(tzinfo=None) >= sd
-                ]
+                start = datetime.strptime(settings.start_date, "%Y-%m-%d")
             except ValueError:
                 pass
         if settings.end_date:
             try:
-                ed = datetime.strptime(settings.end_date, "%Y-%m-%d")
-                self._activities = [
-                    a for a in self._activities if a.date.replace(tzinfo=None) <= ed
-                ]
+                end = datetime.strptime(settings.end_date, "%Y-%m-%d")
             except ValueError:
                 pass
+        types = set(settings.activity_types) if settings.activity_types else None
+        self._activities = self.filter(activity_types=types, start_date=start, end_date=end)
         self._metrics_cache.clear()
 
     @property

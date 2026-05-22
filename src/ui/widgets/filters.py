@@ -13,8 +13,10 @@ from PyQt6.QtWidgets import (
 )
 
 from src.ui.theme import (
+    ACCENT_HOVER,
     BORDER,
     CARD_BG,
+    FONT_SIZE_MD,
     RADIUS_MD,
     TEXT,
     TEXT_SUBTLE,
@@ -53,12 +55,6 @@ class FiltersWidget(QWidget):
         layout.addSpacing(4)
 
         # Type selector
-        type_label = QLabel("\u2328 Types")
-        type_label.setStyleSheet(
-            f"color: {TEXT_SUBTLE}; font-size: 12px;"
-        )
-        layout.addWidget(type_label)
-
         self._combo_type = QComboBox()
         self._combo_type.addItem("All", None)
         for t in self._activity_types:
@@ -96,7 +92,11 @@ class FiltersWidget(QWidget):
         self._btn_apply = QPushButton("🔍  Apply")
         self._btn_apply.clicked.connect(self._apply)
         self._btn_apply.setFixedHeight(32)
-        self._btn_apply.setStyleSheet("QPushButton { font-size: 14px; padding: 0 12px; }")
+        self._btn_apply.setStyleSheet(
+            f"QPushButton {{ font-size: {FONT_SIZE_MD}; padding: 0 12px; }}"
+            f"QPushButton:hover {{ background-color: {ACCENT_HOVER}; }}"
+            f"QPushButton:pressed {{ background-color: #1E3A8A; }}"
+        )
         layout.addWidget(self._btn_apply)
 
     def _apply(self):

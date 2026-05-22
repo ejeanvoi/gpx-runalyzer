@@ -16,6 +16,8 @@ from PyQt6.QtWidgets import (
 from src.ui.theme import (
     ACCENT,
     BORDER,
+    CARD_BG,
+    FONT_SIZE_LG,
     TEXT_SUBTLE,
     apply_theme,
 )
@@ -53,7 +55,7 @@ class MainWindow(QMainWindow):
         # ── Nav bar ───────────────────────────────────────
         self._nav_bar = QWidget()
         self._nav_bar.setStyleSheet(
-            f"background-color: #FFFFFF; border-bottom: 1px solid {BORDER}; min-height: 48px;"
+            f"background-color: {CARD_BG}; border-bottom: 1px solid {BORDER}; min-height: 48px;"
         )
         nav_layout = QHBoxLayout(self._nav_bar)
         nav_layout.setContentsMargins(16, 8, 16, 8)
@@ -65,7 +67,7 @@ class MainWindow(QMainWindow):
 
         self._title_label = QLabel("GPX Runalyzer")
         self._title_label.setStyleSheet(
-            f"color: {ACCENT}; font-size: 16px; font-weight: 700;"
+            f"color: {ACCENT}; font-size: {FONT_SIZE_LG}; font-weight: 700;"
         )
         title_row.addWidget(self._title_label)
 
@@ -78,6 +80,7 @@ class MainWindow(QMainWindow):
             f"background-color: transparent; border: none; "
             f"font-size: 18px; padding: 0 4px; }}"
             f"QPushButton:hover {{ background-color: {BORDER}; border-radius: 4px; }}"
+            f"QPushButton:pressed {{ background-color: #CBD5E1; border-radius: 4px; }}"
         )
         self._btn_settings.clicked.connect(self._show_settings)
         self._btn_settings.setVisible(False)

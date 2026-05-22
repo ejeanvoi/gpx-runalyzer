@@ -62,14 +62,14 @@ class SettingsDialog(QDialog):
 
         self._cb_from = QPushButton("clear")
         self._cb_from.setCheckable(True)
-        self._cb_from.setChecked(True)
         self._cb_from.toggled.connect(lambda c, e=self._date_start: e.setEnabled(not c))
+        self._cb_from.setChecked(True)
         date_row.addWidget(self._cb_from)
 
         self._cb_to = QPushButton("clear")
         self._cb_to.setCheckable(True)
-        self._cb_to.setChecked(True)
         self._cb_to.toggled.connect(lambda c, e=self._date_end: e.setEnabled(not c))
+        self._cb_to.setChecked(True)
         date_row.addWidget(self._cb_to)
 
         layout.addLayout(date_row)
@@ -102,9 +102,9 @@ class SettingsDialog(QDialog):
 
         self._cb_all_types = QPushButton("All Types")
         self._cb_all_types.setCheckable(True)
-        self._cb_all_types.setChecked(not bool(self._types_list))
         self._cb_all_types.setFixedWidth(80)
         self._cb_all_types.toggled.connect(self._on_toggle_all_types)
+        self._cb_all_types.setChecked(not bool(self._types_list))
         types_row.addWidget(self._cb_all_types)
 
         self._cb_type_picker = QComboBox()

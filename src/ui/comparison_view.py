@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
 
 from src.analysis.comparison import ComparisonEntry, build_comparison_with_reference
 from src.analysis.route_similarity import find_similar_routes
-from src.ui import formatting
+from src.ui import formatting, theme
 from src.ui.theme import ACCENT, TEXT
 
 pg.setConfigOption("background", "w")
@@ -159,7 +159,7 @@ class ComparisonView(QWidget):
             self._threshold,
         )
         self._entries = build_comparison_with_reference(
-            self._reference, similar
+            self._reference, similar, metrics_getter=self._store.get_metrics
         )
         self._update_table()
         self._update_chart()
@@ -191,38 +191,33 @@ class ComparisonView(QWidget):
 
         for i, entry in enumerate(self._entries):
             act = entry.activity
-            m = entry.metrics
-
             self._table.setItem(
                 i, 0, QTableWidgetItem(act.date.strftime("%Y-%m-%d"))
             )
             self._table.setItem(i, 1, QTableWidgetItem(act.name))
             self._table.setItem(
                 i, 2, QTableWidgetItem(
-                    formatting.format_distance_km(m.get("distance_km", 0))
+                    formatting.format_distance_km(entry.distance_km)
                 )
             )
             self._table.setItem(
                 i, 3, QTableWidgetItem(
-                    formatting.format_pace(m.get("pace_s_per_km", 0))
+                    formatting.format_pace(entry.pace_s_per_km)
                 )
             )
             self._table.setItem(
                 i, 4, QTableWidgetItem(
-                    formatting.format_elevation(m.get("elevation_gain_m", 0))
+                    formatting.format_elevation(entry.elevation_gain_m)
                 )
             )
-
-            avg_hr = m.get("avg_hr")
             self._table.setItem(
                 i, 5, QTableWidgetItem(
-                    f"{avg_hr:.0f}" if avg_hr else "--"
+                    f"{entry.avg_hr:.0f}" if entry.avg_hr else "--"
                 )
             )
-            max_hr = m.get("max_hr")
             self._table.setItem(
                 i, 6, QTableWidgetItem(
-                    f"{max_hr:.0f}" if max_hr else "--"
+                    f"{entry.max_hr:.0f}" if entry.max_hr else "--"
                 )
             )
 
@@ -244,7 +239,7 @@ class ComparisonView(QWidget):
 
     def _update_chart(self):
         self._plot.clear()
-        self._plot.setBackground("#FFFFFF")
+        self._plot.setBackground(theme.CARD_BG)
         self._plot.showGrid(x=True, y=True, alpha=0.2)
 
         entries = self._get_selected_entries()
@@ -257,17 +252,17 @@ class ComparisonView(QWidget):
         x = list(range(n))
         bw = 0.25
 
-        dist_vals = self._normalise([e.metrics.get("distance_km", 0) for e in entries])
-        pace_vals = self._normalise([e.metrics.get("pace_s_per_km", 0) for e in entries])
-        elev_vals = self._normalise([e.metrics.get("elevation_gain_m", 0) for e in entries])
+        dist_vals = self._normalise([e.distance_km for e in entries])
+        pace_vals = self._normalise([e.pace_s_per_km for e in entries])
+        elev_vals = self._normalise([e.elevation_gain_m for e in entries])
 
         from pyqtgraph import BarGraphItem
         pi.addItem(BarGraphItem(x=x, y=[0]*n, y1=dist_vals, width=bw,
-            brush=pg.mkBrush("#2563EB"), pen=pg.mkPen("#2563EB", width=1), name="Distance"))
+            brush=pg.mkBrush(theme.ACCENT), pen=pg.mkPen(theme.ACCENT, width=1), name="Distance"))
         pi.addItem(BarGraphItem(x=[xi + bw + 0.02 for xi in x], y=[0]*n, y1=pace_vals, width=bw,
-            brush=pg.mkBrush("#16A34A"), pen=pg.mkPen("#16A34A", width=1), name="Pace s/km"))
+            brush=pg.mkBrush(theme.SUCCESS), pen=pg.mkPen(theme.SUCCESS, width=1), name="Pace s/km"))
         pi.addItem(BarGraphItem(x=[xi + 2*(bw + 0.02) for xi in x], y=[0]*n, y1=elev_vals, width=bw,
-            brush=pg.mkBrush("#D97706"), pen=pg.mkPen("#D97706", width=1), name="Elev. m"))
+            brush=pg.mkBrush(theme.WARNING), pen=pg.mkPen(theme.WARNING, width=1), name="Elev. m"))
 
         self._plot.getAxis("bottom").setTicks([list(zip(x, dates)), []])
         leg = self._plot.addLegend()

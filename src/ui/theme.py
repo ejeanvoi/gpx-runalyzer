@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 # ── color tokens ───────────────────────────────────────────
 BG = "#FFFFFF"
 SURFACE = "#F8FAFC"
@@ -18,13 +20,28 @@ ROW_HOVER = "#EFF6FF"
 TAB_INACTIVE = "#94A3B8"
 
 
+# ── typography ─────────────────────────────────────────────
+if sys.platform == "darwin":
+    _FONT_FAMILY = '".AppleSystemUIFont", Helvetica, Arial, sans-serif'
+elif sys.platform == "win32":
+    _FONT_FAMILY = '"Segoe UI", Arial, sans-serif'
+else:
+    _FONT_FAMILY = '"Ubuntu", "Cantarell", Arial, sans-serif'
+
 # ── dimensions ─────────────────────────────────────────────
 RADIUS_SM = "4px"
 RADIUS_MD = "8px"
 FONT_SIZE_SM = "12px"
 FONT_SIZE_BASE = "13px"
 FONT_SIZE_MD = "14px"
+FONT_SIZE_LG = "16px"
 FONT_SIZE_XXL = "24px"
+
+# ── chart series colours ────────────────────────────────────
+SERIES_PACE = "#2196F3"
+SERIES_ELEV = "#4CAF50"
+SERIES_HR   = "#FF5722"
+SERIES_VS   = "#9C27B0"
 
 
 GLOBAL_STYLESHEET = f"""
@@ -32,7 +49,7 @@ GLOBAL_STYLESHEET = f"""
 QWidget {{
     background-color: {SURFACE};
     color: {TEXT};
-    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: {_FONT_FAMILY};
     font-size: {FONT_SIZE_BASE};
 }}
 
@@ -60,7 +77,16 @@ QPushButton:hover {{
     background-color: {ACCENT_HOVER};
 }}
 QPushButton:pressed {{
-    background-color: #1E40AF;
+    background-color: #1E3A8A;
+}}
+QPushButton:checked {{
+    background-color: {ACCENT_LIGHT};
+    color: {ACCENT};
+    border: 1.5px solid {ACCENT};
+}}
+QPushButton:checked:hover {{
+    background-color: {ACCENT_LIGHT};
+    border-color: {ACCENT_HOVER};
 }}
 QPushButton:disabled {{
     background-color: {TAB_INACTIVE};

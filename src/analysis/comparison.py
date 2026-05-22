@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import timedelta
 
 from src.models.activity import Activity
@@ -44,10 +45,11 @@ class ComparisonEntry:
 def build_comparison_with_reference(
     reference: Activity,
     others: list[tuple[Activity, float]],
+    metrics_getter: Callable[[Activity], dict] = compute_metrics,
 ) -> list[ComparisonEntry]:
-    ref_m = compute_metrics(reference)
+    ref_m = metrics_getter(reference)
     entries: list[ComparisonEntry] = [ComparisonEntry(reference, ref_m, 1.0)]
     for act, sim in others:
-        m = compute_metrics(act)
+        m = metrics_getter(act)
         entries.append(ComparisonEntry(act, m, sim))
     return entries

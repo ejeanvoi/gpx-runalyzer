@@ -4,7 +4,7 @@ import bisect
 
 import pyqtgraph as pg
 from PyQt6.QtCore import QEvent, QPoint, Qt
-from PyQt6.QtGui import QColor, QFont
+from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
@@ -110,25 +110,25 @@ class SeriesChart(QWidget):
         layout.addWidget(self._plot)
 
         self._register(
-            "Pace", QColor(33, 150, 243), "left", checked=True, parent=ctrl_lay
+            "Pace", pg.mkColor(theme.SERIES_PACE), "left", checked=True, parent=ctrl_lay
         )
         self._register(
             "Elevation",
-            QColor(76, 175, 80),
+            pg.mkColor(theme.SERIES_ELEV),
             "left",
             checked=False,
             parent=ctrl_lay,
         )
         self._register(
             "Heart Rate",
-            QColor(255, 87, 34),
+            pg.mkColor(theme.SERIES_HR),
             "left",
             checked=False,
             parent=ctrl_lay,
         )
         self._register(
             "Vertical Speed",
-            QColor(156, 39, 176),
+            pg.mkColor(theme.SERIES_VS),
             "left",
             checked=False,
             parent=ctrl_lay,
@@ -147,6 +147,8 @@ class SeriesChart(QWidget):
             f"font-size: {theme.FONT_SIZE_SM}; "
             f"}} QPushButton:hover {{ "
             f"background-color: {theme.CARD_BORDER}; "
+            f"}} QPushButton:pressed {{ "
+            f"background-color: {theme.BORDER}; "
             f"}}"
         )
         ctrl_lay.addWidget(self._btn_reset_x)
