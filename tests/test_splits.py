@@ -1,6 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
-from src.analysis.splits import SPLIT_DISTANCES, compute_best_splits
+from src.analysis.splits import (
+    SPLIT_DISTANCES,
+    VS_WINDOWS,
+    compute_best_splits,
+    compute_best_vertical_speeds,
+)
 from src.models.activity import TrackPoint
 
 
@@ -56,3 +61,61 @@ class TestSplitTimes:
         p = TrackPoint(0, 0, 0, datetime.now(tz=timezone.utc))
         splits = compute_best_splits([p], [100])
         assert splits[100] is None
+
+
+def _make_climbing_points(
+    gain_per_min: float, duration_min: int, interval_s: int = 10
+) -> list[TrackPoint]:
+    """Points climbing at constant rate: gain_per_min m/min, every interval_s seconds."""
+    base = datetime(2024, 6, 1, 8, 0, 0, tzinfo=timezone.utc)
+    n = duration_min * 60 // interval_s + 1
+    ele_per_step = gain_per_min * interval_s / 60
+    return [
+        TrackPoint(
+            lat=48.0,
+            lon=6.0,
+            ele=1000.0 + i * ele_per_step,
+            time=base + timedelta(seconds=i * interval_s),
+        )
+        for i in range(n)
+    ]
+
+
+class TestBestVerticalSpeeds:
+    def test_empty_points(self):
+        result = compute_best_vertical_speeds([])
+        assert all(v is None for v in result.values())
+
+    def test_no_timestamps(self):
+        pts = [TrackPoint(0, 0, 100 + i, None) for i in range(10)]
+        result = compute_best_vertical_speeds(pts)
+        assert all(v is None for v in result.values())
+
+    def test_constant_climb_1min(self):
+        # 600 m/h = 10 m/min constant climb, 5-minute activity
+        pts = _make_climbing_points(gain_per_min=10.0, duration_min=5)
+        result = compute_best_vertical_speeds(pts, [60])
+        assert result[60] is not None
+        assert abs(result[60] - 600.0) < 1.0  # 10 m/min * 60 = 600 m/h
+
+    def test_window_longer_than_activity(self):
+        # 2-minute activity, 30-min window should return None
+        pts = _make_climbing_points(gain_per_min=10.0, duration_min=2)
+        result = compute_best_vertical_speeds(pts, [1800])
+        assert result[1800] is None
+
+    def test_all_windows(self):
+        # 35-minute constant climb — all 6 windows should have a value
+        pts = _make_climbing_points(gain_per_min=10.0, duration_min=35)
+        result = compute_best_vertical_speeds(pts, VS_WINDOWS)
+        assert all(v is not None for v in result.values())
+
+    def test_flat_activity(self):
+        # No elevation gain — all VS values should be 0 (or treated as --)
+        base = datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc)
+        pts = [
+            TrackPoint(48.0, 6.0, 500.0, base + timedelta(seconds=i * 30))
+            for i in range(120)
+        ]
+        result = compute_best_vertical_speeds(pts, [60])
+        assert result[60] == 0.0

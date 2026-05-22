@@ -49,3 +49,45 @@ SPLIT_LABELS = {
 SPLIT_DISTANCES = [100, 200, 400, 800, 1000, 5000, 10000, 21097.5, 42195]
 
 PR_DISTANCES: list[float] = [1000, 5000, 10000, 21097.5, 42195]
+
+VS_WINDOWS: list[int] = [60, 180, 300, 600, 900, 1800]
+
+VS_LABELS: dict[int, str] = {
+    60: "1 min",
+    180: "3 min",
+    300: "5 min",
+    600: "10 min",
+    900: "15 min",
+    1800: "30 min",
+}
+
+
+def compute_best_vertical_speeds(
+    points: list[TrackPoint], windows_s: list[int] = VS_WINDOWS
+) -> dict[int, float | None]:
+    timed = [p for p in points if p.time is not None]
+    if len(timed) < 2:
+        return {w: None for w in windows_s}
+
+    # Prefix sums of positive elevation gain
+    cum_gain: list[float] = [0.0]
+    for k in range(1, len(timed)):
+        diff = timed[k].ele - timed[k - 1].ele
+        cum_gain.append(cum_gain[-1] + max(diff, 0.0))
+
+    result: dict[int, float | None] = {}
+    for window in windows_s:
+        best_vs: float | None = None
+        j = 0
+        for i in range(len(timed)):
+            while j < len(timed) - 1 and (timed[j].time - timed[i].time).total_seconds() < window:  # type: ignore[operator]
+                j += 1
+            dt = (timed[j].time - timed[i].time).total_seconds()  # type: ignore[operator]
+            if dt < window:
+                break
+            gain = cum_gain[j] - cum_gain[i]
+            vs = gain / dt * 3600  # m/h
+            if best_vs is None or vs > best_vs:
+                best_vs = vs
+        result[window] = best_vs
+    return result

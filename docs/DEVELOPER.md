@@ -9,7 +9,7 @@ src/main.py                         Entry point, CLI argument parsing
 src/ui/                             PyQt6 views and widgets
   main_window.py                    QMainWindow with stacked views (loading, dashboard, detail, comparison)
   dashboard.py                      Summary bar, PR labels, filters, activity list
-  activity_detail.py                Map, elevation chart, metric cards, split times
+  activity_detail.py                Map, elevation chart, metric cards, split times, best vertical speed
   comparison_view.py                Similar routes table + normalized bar chart
   settings_dialog.py                Persistent settings: date range, activity types
   formatting.py                     Display formatting: pace, duration, distance, elevation
@@ -27,7 +27,7 @@ src/services/                       Business logic
   store.py                          ActivityStore: load, filter, metrics cache, parse-error logging
   config.py                         Persistent settings (JSON → ~/.config/gpx-runalyzer/config.json)
 src/analysis/                       Algorithms
-  splits.py                         Best split times via sliding window over cumulative distance
+  splits.py                         Best split times (distance-based) and best vertical speed (time-based) via sliding windows
   route_similarity.py               Discrete Fréchet distance, bbox pre-filter, track resampling
   comparison.py                     ComparisonEntry, build_comparison_with_reference
 tests/                              Test suite
@@ -66,7 +66,13 @@ This avoids having haversine or distance-accumulator logic duplicated across mod
 
 Computable splits: 100 m, 200 m, 400 m, 800 m, 1 K, 5 K, 10 K, Half (21 097.5 m), Full (42 195 m)
 
-Algorithm: sliding window over cumulative distance. For each split distance, finds the minimum elapsed time across all windows of that distance. Only computed for splits ≤ total track distance.
+Algorithm (`compute_best_splits`): sliding window over cumulative distance. For each split distance, finds the minimum elapsed time across all windows of that distance. Only computed for splits ≤ total track distance.
+
+## Best Vertical Speed
+
+Windows: 1 min, 3 min, 5 min, 10 min, 15 min, 30 min (defined as `VS_WINDOWS` in `splits.py`)
+
+Algorithm (`compute_best_vertical_speeds`): sliding window over timestamps using a prefix-sum of positive elevation gain. For each window duration, finds the maximum average vertical speed (m/h) over any contiguous window of that length. Returns `None` for windows longer than the activity.
 
 ## Display Formatting
 
@@ -79,6 +85,7 @@ Algorithm: sliding window over cumulative distance. For each split distance, fin
 | `format_duration(td)` | `timedelta` | `H:MM:SS` or `M:SS` |
 | `format_distance_km(km)` | float km | `X.XX km` or `X m` |
 | `format_elevation(m)` | float meters | `X m` |
+| `format_vert_speed(vs_m_per_h)` | float m/h or None | `X m/h` or `--` |
 
 These are used by the dashboard, activity detail, comparison view, and activity list to ensure consistent display.
 
@@ -87,7 +94,8 @@ These are used by the dashboard, activity detail, comparison view, and activity 
 `src/ui/theme.py` defines design tokens consumed across the UI:
 
 - **Colors**: `ACCENT`, `ACCENT_LIGHT`, `ACCENT_HOVER`, `BORDER`, `CARD_BG`, `CARD_BORDER`, `SUCCESS`, `WARNING`, `TEXT`, `TEXT_SUBTLE`, `HEADER_BG`, `ROW_HOVER`, `TAB_INACTIVE`
-- **Sizes**: `RADIUS_SM`, `RADIUS_MD`, `FONT_SIZE_SM`, `FONT_SIZE_BASE`, `FONT_SIZE_MD`, `FONT_SIZE_XXL`
+- **Chart series colors**: `SERIES_PACE`, `SERIES_ELEV`, `SERIES_HR`, `SERIES_VS` — used by elevation chart and comparison chart; change here to retheme all charts at once
+- **Sizes**: `RADIUS_SM`, `RADIUS_MD`, `FONT_SIZE_SM`, `FONT_SIZE_BASE`, `FONT_SIZE_MD`, `FONT_SIZE_LG`, `FONT_SIZE_XXL`
 - `apply_theme(widget)` applies the global stylesheet to the main window
 
 ## Adding a New Metric
@@ -102,7 +110,7 @@ These are used by the dashboard, activity detail, comparison view, and activity 
 
 1. Add to `SPLIT_DISTANCES` in `src/analysis/splits.py`
 2. Add a label entry in `SPLIT_LABELS`
-3. If it should appear on the dashboard PR row, add it to the `pr_distances` list in `DashboardView._update_pr()`
+3. If it should appear on the dashboard PR row, add it to `PR_DISTANCES` in `src/analysis/splits.py`
 
 ## Testing
 

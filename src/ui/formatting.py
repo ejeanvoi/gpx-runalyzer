@@ -50,3 +50,9 @@ def format_distance_km(km: float, precision: int = 2) -> str:
 def format_elevation(m: float) -> str:
     """Format elevation gain."""
     return f"{m:.0f} m"
+
+
+def format_vert_speed(vs_m_per_h: float | None) -> str:
+    if not vs_m_per_h:
+        return "--"
+    return f"{vs_m_per_h:.0f} m/h"

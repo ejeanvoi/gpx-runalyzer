@@ -89,7 +89,19 @@ class ActivityDetailView(QWidget):
         self._split_labels: list[QLabel] = []
         main.addLayout(self._splits_grid)
 
-        # 4 \u2013 Map (stacked widget, lazy MapView)
+        # 4 \u2014 Best Vertical Speed grid
+        vs_header = QLabel("Best Vertical Speed")
+        vs_header.setStyleSheet(
+            f"font-size: {theme.FONT_SIZE_MD}; font-weight: 600; "
+            f"color: {theme.TEXT_SUBTLE};"
+        )
+        main.addWidget(vs_header)
+        self._vs_grid = QGridLayout()
+        self._vs_grid.setSpacing(6)
+        self._vs_labels: list[QLabel] = []
+        main.addLayout(self._vs_grid)
+
+        # 6 \u2013 Map (stacked widget, lazy MapView)
         self._map_stack = QStackedWidget()
         self._map_placeholder = QLabel("Map will appear when activity is loaded")
         self._map_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -185,6 +197,30 @@ class ActivityDetailView(QWidget):
             col = idx % cols
             self._splits_grid.addWidget(split_lbl, row, col)
             self._split_labels.append(split_lbl)
+
+        # Best Vertical Speed
+        from src.analysis.splits import VS_LABELS, VS_WINDOWS, compute_best_vertical_speeds
+        from src.ui.formatting import format_vert_speed
+
+        vs_data = compute_best_vertical_speeds(activity.points)
+        self._vs_labels.clear()
+        while self._vs_grid.count():
+            item = self._vs_grid.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        cols = 4
+        for idx, w in enumerate(VS_WINDOWS):
+            vs_str = format_vert_speed(vs_data.get(w))
+            vs_lbl = QLabel(f"{VS_LABELS[w]}: {vs_str}")
+            vs_lbl.setStyleSheet(
+                f"font-size: {theme.FONT_SIZE_SM}; padding: 4px 8px; "
+                f"background-color: {theme.SURFACE}; "
+                f"border-radius: {theme.RADIUS_SM}; "
+                f"font-weight: 500;"
+            )
+            vs_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self._vs_grid.addWidget(vs_lbl, idx // cols, idx % cols)
+            self._vs_labels.append(vs_lbl)
 
         # Map (lazy import)
         if self._map_view is None:

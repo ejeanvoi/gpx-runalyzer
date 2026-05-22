@@ -75,7 +75,7 @@ Filter preferences (date range, activity types) are persisted to `~/.config/gpx-
 ## Features
 
 - **Dashboard**: Global summary across all activities (distance, pace, elevation, HR), personal records (100 m to marathon), type/date filters, chronological activity list
-- **Activity Detail**: Route on interactive map (OpenStreetMap), elevation/profile chart with toggleable Pace / Elevation / HR / Vertical Speed overlays and crosshair tooltip, best split times
+- **Activity Detail**: Route on interactive map (OpenStreetMap), elevation/profile chart with toggleable Pace / Elevation / HR / Vertical Speed overlays and crosshair tooltip, best split times, best vertical speed over 1/3/5/10/15/30-minute windows
 - **Similar Routes**: Discrete Fréchet distance-based route matching with configurable similarity threshold (0–100%), side-by-side comparison table + normalized bar chart
 - **Supported GPX formats**: Standard GPX 1.1 with Garmin TrackPoint extensions (`<gpxtpx:hr>`, `<gpxtpx:cad>`)
 
