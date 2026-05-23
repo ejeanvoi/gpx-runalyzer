@@ -52,7 +52,8 @@ def format_elevation(m: float) -> str:
     return f"{m:.0f} m"
 
 
-def format_vert_speed(vs_m_per_h: float | None) -> str:
-    if not vs_m_per_h:
+def format_vert_speed(data: tuple[float, float] | None) -> str:
+    if data is None or data[0] == 0.0:
         return "--"
-    return f"{vs_m_per_h:.0f} m/h"
+    vs, slope = data
+    return f"{vs:.0f} m/h ({slope:.0f}%)"

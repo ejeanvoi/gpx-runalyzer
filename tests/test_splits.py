@@ -96,7 +96,8 @@ class TestBestVerticalSpeeds:
         pts = _make_climbing_points(gain_per_min=10.0, duration_min=5)
         result = compute_best_vertical_speeds(pts, [60])
         assert result[60] is not None
-        assert abs(result[60] - 600.0) < 1.0  # 10 m/min * 60 = 600 m/h
+        vs, _slope = result[60]
+        assert abs(vs - 600.0) < 1.0  # 10 m/min * 60 = 600 m/h
 
     def test_window_longer_than_activity(self):
         # 2-minute activity, 30-min window should return None
@@ -111,11 +112,30 @@ class TestBestVerticalSpeeds:
         assert all(v is not None for v in result.values())
 
     def test_flat_activity(self):
-        # No elevation gain — all VS values should be 0 (or treated as --)
+        # No elevation gain — VS is 0.0 m/h (displays as "--" via format_vert_speed)
         base = datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc)
         pts = [
             TrackPoint(48.0, 6.0, 500.0, base + timedelta(seconds=i * 30))
             for i in range(120)
         ]
         result = compute_best_vertical_speeds(pts, [60])
-        assert result[60] == 0.0
+        assert result[60] == (0.0, 0.0)
+
+    def test_slope_percentage(self):
+        # 10 m gain over 100 m horizontal → 10% slope
+        base = datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc)
+        # ~100 m horizontal distance per segment: 0.001° lat ≈ 111 m
+        pts = [
+            TrackPoint(
+                lat=48.0 + i * 0.0009,  # ~100 m per step
+                lon=6.0,
+                ele=1000.0 + i * 10.0,  # 10 m gain per step
+                time=base + timedelta(seconds=i * 30),
+            )
+            for i in range(20)
+        ]
+        result = compute_best_vertical_speeds(pts, [60])
+        assert result[60] is not None
+        _vs, slope = result[60]
+        # ~100 m horiz, 10 m gain per 30-s step → slope ≈ 10%
+        assert 5.0 < slope < 20.0
